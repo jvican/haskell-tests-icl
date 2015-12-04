@@ -4,6 +4,7 @@ Build-Type:        Simple
 cabal-version:     >= 1.2
 
 executable Tests
-  main-is:         src/Main.hs
+  main-is:         Main.hs
   hs-source-dirs:  src
+  hs-source-dirs:  src/bdds
   build-depends:   base

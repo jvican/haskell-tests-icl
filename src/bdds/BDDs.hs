@@ -1,4 +1,4 @@
-module BBDs where
+module BDDs where
 
 type Index = Int
 type Env = [(Index, Bool)]
@@ -43,6 +43,7 @@ sat (rootId, nodes) =
         addEnv [] x = []
         addEnv (xs:xxs) x = (x:xs):xxs
 
+-- One step evaluation - including shortcircuits
 simplify :: BExp -> BExp
 simplify (And(Var x)(r)) =  if(x) then r else Var False
 simplify (And(l)(Var x)) = if(x) then l else Var False
@@ -51,24 +52,46 @@ simplify (Or(l)(Var x)) = if(x) then Var True else l
 simplify (Not(Var x)) = Var(not x)
 simplify b = b
 
-restrict' :: BExp -> Index -> Bool ->BExp
-restrict' b i x = simplify $ restrict b i x
-
 -- Shannon Boolean restriction
 restrict :: BExp -> Index -> Bool -> BExp
 restrict ref@(IdRef j) i x = if(i == j) then Var x else ref
-restrict (And(l)(r)) i x = simplify $ And(restrict' l i x)(restrict' r i x)
-restrict (Or(l)(r)) i x = simplify $ Or(restrict' l i x)(restrict' r i x)
-restrict (Not(b)) i x = simplify $ Not(restrict' b i x)
-restrict b i x = b
+restrict (And(l)(r)) i x = simplify $ And(restrict l i x)(restrict r i x)
+restrict (Or(l)(r)) i x = simplify $ Or(restrict l i x)(restrict r i x)
+restrict (Not(e)) i x = simplify $ Not(restrict e i x)
+restrict e i x = e
 
+buildBDD :: BExp -> [Index] -> BDD
+buildBDD e xs = buildBDD' (simplify e) 2 xs
 
+buildBDD' :: BExp -> NodeId -> [Index] -> BDD
+buildBDD' (Var False) id xs = (0, [])
+buildBDD' (Var True) id xs = (1, [])
+buildBDD' (IdRef i) id xs = (id, [(id, (i, 0, 1))])
+buildBDD' (Not e) id xs@(_:_) =
+    let (id', nodes) = buildBDD' e id xs
+    in (id', negate' nodes)
+buildBDD' o@(Or(l)(r)) id xs@(_:_) = branch o l r id xs
+buildBDD' a@(And(l)(r)) id xs@(_:_) = branch a l r id xs
+buildBDD' e id [] = error("BExp malformed")
 
+branch :: BExp -> BExp -> BExp -> NodeId -> [Index] -> BDD
+branch e l r id (x:xs) =
+    let n = 2 * id
+        el = restrict e x False
+        er = restrict e x True
+        (lid, ls) = buildBDD' el n xs
+        (rid, rs) = buildBDD' er (n+1) xs
+        node = (id, (x, lid, rid))
+    in (id, node:(ls ++ rs))
 
+not' :: NodeId -> NodeId
+not' 0 = 1
+not' 1 = 0
+not' x = x
 
-
-
-
+negate' :: [BDDNode] -> [BDDNode]
+negate' [] = []
+negate' ((id, (ind, x, y)):xs) = (id, (ind, not' x, not' y)):negate' xs
 
 -- Testing
 b1, b2, b3, b4, b5, b6, b7, b8 :: BExp
