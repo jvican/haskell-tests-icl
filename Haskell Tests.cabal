@@ -3,8 +3,12 @@ version:           1.0
 Build-Type:        Simple
 cabal-version:     >= 1.2
 
-executable Tests
+executable bdds
   main-is:         Main.hs
-  hs-source-dirs:  src
   hs-source-dirs:  src/bdds
+  build-depends:   base
+
+executable strees
+  main-is:         Main.hs
+  hs-source-dirs:  src/strees
   build-depends:   base
