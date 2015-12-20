@@ -41,7 +41,10 @@ main = do
             print $ partition "happy" "haskell"
             print $ findSubstrings' "an" t1
             print $ findSubstrings' "s" t2
-            print $ buildTree "mississippi"
-            print $ findSubstrings' "s" (buildTree "mississippi")
             print $ buildTree "banana"
+            print $ buildTree "mississippi"
             print $ findSubstrings' "an" (buildTree "banana")
+            print $ findSubstrings' "s" (buildTree "mississippi")
+            print $ repeated (buildTree "mississippi") ""
+            print $ longestRepeatedSubstring "mississippi"
+            print $ longestRepeatedSubstring "banana"

@@ -1,10 +1,15 @@
 module SuffixTrees where 
 
-import Data.List (findIndices, any, drop)
+import Data.List (findIndices, any, drop, maximumBy)
 import Data.Ord (comparing)
 
-data SuffixTree = Leaf Int | Node [(String, SuffixTree)]
-                    deriving (Eq, Ord, Show)
+data SuffixTree = Leaf Int 
+                | Node [(String, SuffixTree)]
+                deriving (Eq, Ord, Show)
+
+isLeaf :: SuffixTree -> Bool
+isLeaf (Leaf _) = True
+isLeaf _ = False
 
 isPrefix :: String -> String -> Bool
 isPrefix xs ys = length xs <= length ys && all (uncurry (==)) zs
@@ -52,14 +57,34 @@ buildTree s = foldl (flip insert) (Node []) xs
 
 insert :: (String, Int) -> SuffixTree -> SuffixTree
 insert _ (Leaf _) = error "Malformed suffix tree, only Leaf encountered"
+insert ("", _) t = error "Empty search string"
 insert x t = Node $ insert' x t
 
 insert' :: (String, Int) -> SuffixTree -> [(String, SuffixTree)]
 insert' (x,i) (Node []) = [(x, Leaf i)]
 insert' (x,i) (Node (n@(y,t):ys))
-    | y == p && p /= ""   = (y,Node $ insert' (x',i) t):ys
-    | y /= p && p /= ""   = split t i:ys
+    | y == p && b         = (y,Node $ insert' (x',i) t):ys
+    | y /= p && b         = split t i:ys
     | otherwise           = n:insert' (x,i) (Node ys)
     where pxy@(p, x', y') = partition x y
           split :: SuffixTree -> Int -> (String, SuffixTree)
           split t i = (p, Node[(y',t), (x',Leaf i)])
+          b = p /= ""
+
+longestRepeatedSubstring :: String -> String
+longestRepeatedSubstring s 
+    | null xs   = ""
+    | otherwise = maximumBy (comparing length) xs
+    where t = buildTree s
+          xs = [x | (x,i) <- repeated t "", i > 1]
+
+repeated :: SuffixTree -> String -> [(String, Int)]
+repeated (Leaf i) s = []
+repeated (Node xs) s =
+    let collect (x,t) ys
+            | isLeaf t && not (null s) = updateLast
+            | otherwise                = ys ++ recurse
+            where recurse = repeated t (s ++ x)
+                  updateLast | null ys   = [(s,1)]
+                             | otherwise = (s, snd (head ys) + 1):tail ys
+    in foldr collect [] xs
