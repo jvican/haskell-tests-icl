@@ -12,3 +12,8 @@ executable strees
   main-is:         Main.hs
   hs-source-dirs:  src/strees
   build-depends:   base
+
+executable lts
+  main-is:         Main.hs
+  hs-source-dirs:  src/lts
+  build-depends:   base
